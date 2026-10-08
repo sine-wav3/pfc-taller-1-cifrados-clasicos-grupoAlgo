@@ -74,9 +74,26 @@ class CifradosClasicos {
    * Supone que la letra más frecuente del mensaje cifrado es la 'e' del
    * original y devuelve la distancia entre las dos. Sin letras, cero.
    */
-  def desplazamientoProbable(m: Mensaje): Int = ???
+  def desplazamientoProbable(m: Mensaje): Int = {
+    val frecuencias = "abcdefghijklmnopqrstuvwxyz"
+    val letras = m.toLowerCase.filter(_.isLetter)
 
-  def romperCesar(m: Mensaje): Mensaje = ???
+    if (letras.isEmpty) {
+      0
+    } else {
+      val conteos = frecuencias.map(letra => (letra, letras.count(_ == letra)))
+      val letraMasFrecuente = conteos.maxBy{
+        case (letra, cantidad) => (cantidad, -letra)
+      }._1
+      (letraMasFrecuente - 'e' + 26) % 26
+    }
+  }
+
+  def romperCesar(m: Mensaje): Mensaje = {
+    val desplazamiento = desplazamientoProbable(m)
+
+    cesar(m, -desplazamiento)
+  }
 
   // Punto 5: responsable Juan Alejandro Marquez -------------------------------------------------------------------
 
@@ -84,11 +101,44 @@ class CifradosClasicos {
    * Cuántos mensajes de longitud n se forman con a letras sin dos iguales
    * seguidas.
    */
-  def combinaciones(n: Int, a: Int): BigInt = ???
+  def combinaciones(n: Int, a: Int): BigInt = {
+    if (n == 0){
+      BigInt(1)
+    } else if (n == 1){
+      BigInt(a)
+    } else {
+     BigInt(a - 1) * combinaciones(n - 1, a)
+    }
+  }
 
   /**
    * Vigenère: cada letra se corre según la letra de la clave que le toca. Lo
    * que no es letra minúscula se copia y no consume clave.
    */
-  def vigenere(m: Mensaje, clave: Clave): Mensaje = ???
+  def vigenere(m: Mensaje, clave: Clave): Mensaje = {
+
+    def cifrar(mensaje: String, posicionClave: Int): String = {
+      if (mensaje.isEmpty) {
+        ""
+      } else {
+        val caracter = mensaje.head
+
+        if (caracter >= 'a' && caracter <= 'z') {
+          val letraClave = clave(posicionClave % clave.length)
+          val desplazamiento = letraClave - 'a'
+          val nuevaLetra = ((caracter - 'a' + desplazamiento) % 26 + 'a').toChar
+
+          nuevaLetra.toString + cifrar(mensaje.tail, posicionClave + 1)
+        } else {
+          caracter.toString + cifrar(mensaje.tail, posicionClave)
+        }
+      }
+    }
+
+    if (clave.isEmpty) {
+      m
+    } else {
+      cifrar(m, 0)
+    }
+  }
 }

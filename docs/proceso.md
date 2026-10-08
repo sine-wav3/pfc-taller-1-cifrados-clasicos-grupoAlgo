@@ -171,6 +171,217 @@ Como la llamada recursiva está en posición de cola, el compilador, gracias a `
 
 Ambas hacen exactamente la misma cantidad de llamadas; lo que cambia es **cuántas están vivas a la vez** en la pila.
 
+# Informe de proceso: puntos 4 (romper un cesar por analisis de frecuencias)
+
+El objetivo de este punto es romper un cifrado `cesar` utilizando el analisis de frecuencias de las letras usando `desplazamientoProbable(hhhaa)`
+
+## 1. Implementacion de desplazamientoProbable
+
+Se usa la funcion para obtener unicamente las letras del mensaje convirtiendolas en minuscula y asi evitar errores.
+
+```Scala
+def desplazamientoProbable(m: Mensaje): Int = {
+val alfabeto = "abcdefghijklmnopqrstuvwxyz"
+val letras = m.toLowerCase.filter(_.isLetter)
+
+if (letras.isEmpty) {
+      0
+    } else {
+      val conteos = frecuencias.map(letra => (letra, letras.count(_ == letra)))
+      val letraMasFrecuente = conteos.maxBy{
+        case (letra, cantidad) => (cantidad, -letra)
+      }._1
+      (letraMasFrecuente - 'e' + 26) % 26
+    }
+  }
+
+  def romperCesar(m: Mensaje): Mensaje = {
+    val desplazamiento = desplazamientoProbable(m)
+
+    cesar(m, -desplazamiento)
+  }
+```
+_ **Caso base:** Si el mensaje no tiene ninguna letra entonces el resultado es cero
+_ **Caso de frecuencias:** Ya cuando se filtra las letras, se procede a contar cuantas veces aparece cada letra del alfabeto. Por ejemplo, para hhhaa se obtiene:
+(a, 2)
+(h, 3)
+De aqui se permite determinal cual es la letra que tiene mayor frecuencia.
+Luego se ordena las letras segun su frecuencia se utiliza `-cantidad` para ordenar las frecuencias de mayor a menor, tambien se incluyo la letra como segundo criterio de ordenamiento, asi cuando dos letras tiene la misma frecuencia, se selecciona la que aparece primero alfabeticamente
+
+## 2. Notacion matematica usada
+
+Cifrado César:
+$$C(x) = (x+k)\mod 26$$
+Descifrado:
+$$D(x) = (x-k)\mod 26$$
+Rango del desplazamiento:
+$$0 \leq k < 26$$
+Cálculo para h:
+$$h-e = 7-4 = 3$$
+Cálculo para a:
+$$(-4+26)\mod26=22$$
+
+## 3. Diagrama del proceso
+
+``` mermaid
+flowchart TD 
+A[Mensaje cifrado] --> B[Convertir a minúsculas] 
+B --> C[Filtrar solamente letras] 
+C --> D{¿Hay letras?} 
+
+D -- No --> E[Retornar 0] 
+D -- Sí --> F[Contar frecuencia de cada letra] 
+
+F --> G[Ordenar por frecuencia] 
+G --> H{¿Existe empate?} 
+
+H -- Sí --> I[Elegir letra menor alfabéticamente] 
+H -- No --> J[Seleccionar letra más frecuente] 
+
+I --> K[Comparar con e] 
+J --> K 
+
+K --> L[Calcular desplazamiento] 
+L --> M[Aplicar desplazamiento contrario] 
+M --> N[Mensaje descifrado]
+```
+
+## Informe de proceso: puntos 5 (combinaciones y cifrado Vigenère)
+
+El objetivo de este punto es implementar dos funciones: combinaciones y vigenere.
+
+La primera función permite calcular cuántos mensajes de longitud $n$ pueden formarse utilizando $a$ letras sin que aparezcan dos letras iguales seguidas.
+
+La segunda función implementa el cifrado Vigenère, donde cada letra del mensaje se desplaza según la letra correspondiente de una clave.
+
+## 1. Implementación de combinaciones
+
+Se utiliza la función combinaciones para calcular la cantidad de mensajes de longitud $n$ que se pueden formar con $a$ letras sin tener dos letras iguales consecutivas.
+
+def combinaciones(n: Int, a: Int): BigInt = {
+if (n == 0){
+BigInt(1)
+} else if (n == 1){
+BigInt(a)
+} else {
+BigInt(a - 1) * combinaciones(n - 1, a)
+}
+}
+Caso base: Si $n=0$, solamente existe una cadena posible: la cadena vacía. Por esto el resultado es:
+
+$$
+1
+$$
+
+Caso base: Si $n=1$, existen $a$ posibilidades, porque se puede escoger cualquiera de las $a$ letras:
+
+$$
+a
+$$
+
+Caso recursivo: Para una cadena de longitud mayor que $1$, después de elegir una primera letra, cada nueva posición tiene $a-1$ posibilidades, porque no puede utilizar la misma letra que está inmediatamente antes.
+
+Por esto se utiliza:
+
+$$
+(a-1)\cdot \operatorname{combinaciones}(n-1,a)
+$$
+
+De esta manera se va reduciendo $n$ hasta llegar a uno de los casos base.
+
+
+## 2. Implementación de Vigenère
+
+La función vigenere implementa el cifrado utilizando una clave.
+
+def vigenere(m: Mensaje, clave: Clave): Mensaje = {
+
+def cifrar(mensaje: String, posicionClave: Int): String = {
+if (mensaje.isEmpty) {
+""
+} else {
+val caracter = mensaje.head
+
+      if (caracter >= 'a' && caracter <= 'z') {
+        val letraClave = clave(posicionClave % clave.length)
+        val desplazamiento = letraClave - 'a'
+        val nuevaLetra = ((caracter - 'a' + desplazamiento) % 26 + 'a').toChar
+
+        nuevaLetra.toString + cifrar(mensaje.tail, posicionClave + 1)
+      } else {
+        caracter.toString + cifrar(mensaje.tail, posicionClave)
+      }
+    }
+}
+
+if (clave.isEmpty) {
+m
+} else {
+cifrar(m, 0)
+}
+}
+
+El funcionamiento de la función consiste en recorrer el mensaje carácter por carácter.
+
+Si el carácter es una letra minúscula, se toma la letra correspondiente de la clave y se utiliza como desplazamiento.
+
+Si el carácter no es una letra minúscula, se copia sin modificar y no se avanza la posición de la clave.
+
+## 3. Procedimiento del cifrado Vigenère
+
+Primero se comprueba si la clave está vacía:
+
+if (clave.isEmpty) {
+m
+}
+
+Si la clave no tiene ninguna letra, el mensaje se devuelve sin modificaciones.
+
+Si la clave contiene letras, se comienza a procesar el mensaje desde la posición $0$:
+
+cifrar(m, 0)
+
+Dentro de cifrar, primero se obtiene el primer carácter:
+
+val caracter = mensaje.head
+
+Después se comprueba si pertenece al rango de letras minúsculas:
+
+if (caracter >= 'a' && caracter <= 'z')
+
+Si es una letra, se obtiene la letra correspondiente de la clave mediante:
+
+val letraClave = clave(posicionClave % clave.length)
+
+El operador % permite repetir la clave cuando se llega a su final.
+
+
+## 5. Diagrama del proceso
+``` mermaid
+    flowchart TD
+    A[Mensaje y clave] --> B{¿Clave vacía?}
+
+    B -- Sí --> C[Retornar mensaje original]
+    B -- No --> D[Iniciar posición de clave en 0]
+
+    D --> E[Obtener primer carácter]
+    E --> F{¿Es letra minúscula?}
+
+    F -- No --> G[Copiar carácter sin cambios]
+    G --> H[Mantener posición de clave]
+
+    F -- Sí --> I[Obtener letra de la clave]
+    I --> J[Calcular desplazamiento]
+    J --> K[Aplicar desplazamiento módulo 26]
+    K --> L[Obtener nueva letra]
+    L --> M[Avanzar posición de clave]
+
+    H --> N{¿Quedan caracteres?}
+    M --> N
+
+    N -- Sí --> E
+    N -- No --> O[Mensaje cifrado]
+```
 ## 5. Punto 3: `frecuencias` (recursión de cola)
 
 ```scala

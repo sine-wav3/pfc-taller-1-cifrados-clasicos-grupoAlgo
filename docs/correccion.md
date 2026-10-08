@@ -147,6 +147,349 @@ En la última fila se llega al caso base y se devuelve $acc = \texttt{"zab"}$. S
 
 Por los Teoremas 1 y 2, ambas funciones calculan exactamente $C(m, k)$ para todo mensaje y todo $k \in \mathbb{Z}$ (positivo, negativo o mayor que 26), y copian sin cambio todo carácter que no sea letra minúscula. Se diferencian solo en el proceso que generan: `cesar` deja una concatenación pendiente por letra, mientras que `cesarCola` mantiene el resultado parcial en el acumulador, como lo establece el Lema 4.
 
+## Informe de corrección: punto 4 (romper un César por análisis de frecuencias)
+
+En este punto se implementan desplazamientoProbable y romperCesar. La idea es estimar el desplazamiento de un mensaje cifrado mediante la frecuencia de sus letras y utilizar dicho desplazamiento para intentar recuperar el mensaje original.
+
+## 1. Notación
+
+Sea $\Sigma = {\texttt{a}, \dots, \texttt{z}}$ el conjunto de letras minúsculas y sea $\mathcal{C}$ el conjunto de caracteres.
+
+Para un mensaje $m \in \mathcal{C}^*$, sea $m'$ el mensaje obtenido al convertir $m$ a minúsculas y conservar únicamente los caracteres que son letras.
+
+Sea $\operatorname{freq}_m(c)$ la cantidad de apariciones de la letra $c$ en el mensaje filtrado.
+
+La letra más frecuente se define como la primera letra según el orden:
+
+$$
+(-\operatorname{freq}_m(c),c)
+$$
+
+es decir, se selecciona primero la mayor frecuencia y, en caso de empate, la menor letra alfabéticamente.
+
+Sea $\operatorname{pos}(c)=c-\texttt{'a'}$, por lo que:
+
+$$
+\operatorname{pos}(\texttt{'a'})=0,\qquad
+\operatorname{pos}(\texttt{'b'})=1,\qquad
+\dots,\qquad
+\operatorname{pos}(\texttt{'z'})=25
+$$
+
+El desplazamiento probable se calcula suponiendo que la letra más frecuente del mensaje cifrado corresponde a la letra e, cuya posición es $4$.
+
+Por tanto:
+
+$$
+k=(\operatorname{pos}(c_{\max})-4+26)\bmod 26
+$$
+
+donde $c_{\max}$ es la letra más frecuente.
+
+## 2. Lema sobre el cálculo del módulo
+
+Lema 1 (desplazamiento dentro del rango). Para toda letra $c \in \Sigma$, el valor calculado por:
+
+$$
+(\operatorname{pos}(c)-4+26)\bmod26
+$$
+
+pertenece al intervalo:
+
+$$
+{0,\dots,25}
+$$
+
+Demostración. El módulo $26$ produce siempre uno de los representantes:
+
+$$
+0,1,2,\dots,25
+$$
+
+Por lo tanto:
+
+$$
+0\leq k<26
+$$
+
+lo que cumple el rango establecido para el desplazamiento. $\blacksquare$
+
+## 3. Lema sobre romperCesar
+
+Lema 2. Si el desplazamiento probable de un mensaje cifrado coincide con el desplazamiento utilizado para cifrarlo, entonces romperCesar recupera el mensaje original.
+
+Demostración. Supongamos que el mensaje original es $m$ y que fue cifrado utilizando un desplazamiento $k$:
+
+$$
+m_c=C(m,k)
+$$
+
+Si:
+
+$$
+\operatorname{desplazamientoProbable}(m_c)=k
+$$
+
+entonces romperCesar aplica $-k$:
+
+C(m_c,-k)
+$$
+
+Sustituyendo $m_c=C(m,k)$:
+
+$$
+C(C(m,k),-k)
+$$
+
+Por la propiedad de inversión:
+
+$$
+C(C(m,k),-k)=m
+$$
+
+Por lo tanto:
+
+$$
+\operatorname{romperCesar}(m_c)=m
+$$
+
+siempre que el desplazamiento probable haya sido estimado correctamente. $\blacksquare$
+
+## 5. Conclusión
+
+La implementación de desplazamientoProbable permite estimar el desplazamiento de un cifrado César mediante el análisis de frecuencias.
+
+El procedimiento consiste en filtrar las letras del mensaje, contar sus apariciones, seleccionar la letra más frecuente y calcular su distancia respecto de e.
+
+La función romperCesar utiliza posteriormente el desplazamiento contrario para intentar recuperar el mensaje original.
+
+Las pruebas realizadas muestran que el método funciona en casos donde la distribución de frecuencias permite identificar correctamente el desplazamiento, pero también se construyó un caso concreto donde falla. Por tanto, la función constituye un método de estimación del desplazamiento mediante frecuencia, cuya efectividad depende del contenido del mensaje.
+
+
+## Informe de corrección: punto 4 (romper un César por análisis de frecuencias)
+
+En este punto se implementan desplazamientoProbable y romperCesar. La idea es estimar el desplazamiento de un mensaje cifrado mediante la frecuencia de sus letras y utilizar dicho desplazamiento para intentar recuperar el mensaje original.
+
+## 1. Notación
+
+Sea $\Sigma = {\texttt{a}, \dots, \texttt{z}}$ el conjunto de letras minúsculas y sea $\mathcal{C}$ el conjunto de caracteres.
+
+Para un mensaje $m \in \mathcal{C}^*$, sea $m'$ el mensaje obtenido al convertir $m$ a minúsculas y conservar únicamente los caracteres que son letras.
+
+Sea $\operatorname{freq}_m(c)$ la cantidad de apariciones de la letra $c$ en el mensaje filtrado.
+
+La letra más frecuente se selecciona teniendo en cuenta dos criterios: primero se considera la mayor frecuencia y, en caso de empate, se selecciona la menor letra alfabéticamente.
+
+Esto se puede representar mediante el orden:
+
+$$
+(-\operatorname{freq}_m(c),c)
+$$
+
+Sea $\operatorname{pos}(c)=c-\texttt{'a'}$, por lo que:
+
+$$
+\operatorname{pos}(\texttt{'a'})=0,\qquad
+\operatorname{pos}(\texttt{'b'})=1,\qquad
+\dots,\qquad
+\operatorname{pos}(\texttt{'z'})=25
+$$
+
+El desplazamiento probable se calcula suponiendo que la letra más frecuente del mensaje cifrado corresponde a la letra e, cuya posición es $4$.
+
+Por tanto:
+
+$$
+k=(\operatorname{pos}(c_{\max})-4+26)\bmod 26
+$$
+
+donde $c_{\max}$ representa la letra seleccionada como más frecuente.
+
+## 2. Lema sobre el cálculo del desplazamiento
+
+Lema 1 (desplazamiento dentro del rango). Para toda letra $c \in \Sigma$, el valor:
+
+$$
+(\operatorname{pos}(c)-4+26)\bmod26
+$$
+
+pertenece al intervalo:
+
+$$
+{0,\dots,25}
+$$
+
+Demostración. El módulo $26$ produce siempre uno de los valores:
+
+$$
+0,1,2,\dots,25
+$$
+
+Por lo tanto:
+
+$$
+0\leq k<26
+$$
+
+y el desplazamiento calculado siempre pertenece al rango permitido. $\blacksquare$
+
+Por ejemplo, para h:
+
+$$
+\operatorname{pos}(\texttt{h})=7
+$$
+
+entonces:
+
+$$
+k=(7-4+26)\bmod26
+$$
+
+$$
+k=29\bmod26
+$$
+
+$$
+k=3
+$$
+
+Por lo tanto:
+
+desplazamientoProbable("h")
+
+devuelve:
+
+3
+
+Para a:
+
+$$
+\operatorname{pos}(\texttt{a})=0
+$$
+
+y:
+
+$$
+k=(0-4+26)\bmod26
+$$
+
+$$
+k=22
+$$
+
+## 3. Lema sobre romperCesar
+
+Lema 2. Si el desplazamiento probable de un mensaje cifrado coincide con el desplazamiento utilizado para cifrarlo, entonces romperCesar recupera el mensaje original.
+
+Demostración. Supongamos que el mensaje original es $m$ y que fue cifrado utilizando un desplazamiento $k$:
+
+$$
+m_c=C(m,k)
+$$
+
+Si el análisis de frecuencias permite encontrar correctamente el desplazamiento:
+
+$$
+\operatorname{desplazamientoProbable}(m_c)=k
+$$
+
+entonces romperCesar aplica el desplazamiento contrario:
+
+$$
+C(m_c,-k)
+$$
+
+Sustituyendo $m_c=C(m,k)$:
+
+$$
+C(C(m,k),-k)
+$$
+
+Por la propiedad de inversión del cifrado César:
+
+$$
+C(C(m,k),-k)=m
+$$
+
+Por lo tanto:
+
+$$
+\operatorname{romperCesar}(m_c)=m
+$$
+
+siempre que el desplazamiento probable haya sido estimado correctamente. $\blacksquare$
+
+## 4. Limitación del método
+
+A diferencia de los puntos 1 y 2, donde se demostró la corrección de cesar y cesarCola para toda entrada, en este punto no es posible garantizar que romperCesar descifre correctamente cualquier mensaje.
+
+La razón es que el algoritmo supone que la letra más frecuente del mensaje original es e.
+
+Esta suposición puede ser falsa.
+
+Por ejemplo, consideremos el mensaje:
+
+hhhh
+
+y un desplazamiento real de:
+
+$$
+k=3
+$$
+
+Al cifrarlo:
+
+$$
+h+3=k
+$$
+
+se obtiene:
+
+kkkk
+
+La función encuentra que k es la letra más frecuente y supone que corresponde a e.
+
+Entonces calcula:
+
+$$
+\operatorname{pos}(\texttt{k})=10
+$$
+
+y:
+
+$$
+k_{\text{estimado}}=(10-4+26)\bmod26
+$$
+
+$$
+k_{\text{estimado}}=6
+$$
+
+Pero el desplazamiento real era:
+
+$$
+k_{\text{real}}=3
+$$
+
+Por lo tanto:
+
+$$
+k_{\text{estimado}}\neq k_{\text{real}}
+$$
+
+y romperCesar("kkkk") no consigue recuperar el mensaje original "hhhh".
+
+Este caso demuestra que el análisis de frecuencias es una estimación y no una garantía de encontrar el desplazamiento correcto.
+
+## 5. Conclusión
+
+La implementación de desplazamientoProbable permite estimar el desplazamiento de un cifrado César mediante el análisis de frecuencias.
+
+El procedimiento consiste en filtrar las letras del mensaje, contar sus apariciones, seleccionar la letra más frecuente y calcular su distancia respecto de e.
+
+La función romperCesar utiliza posteriormente el desplazamiento contrario para intentar recuperar el mensaje original.
+
+Las pruebas muestran que el método funciona cuando la distribución de frecuencias permite identificar correctamente el desplazamiento, pero también puede fallar en determinados mensajes. Por tanto, romperCesar constituye un método de estimación del desplazamiento mediante frecuencia, cuya efectividad depende de la distribución de las letras del mensaje.
 ## 6. Corrección de `frecuencias` (punto 3)
 
 ### 6.1. Notación y especificación
