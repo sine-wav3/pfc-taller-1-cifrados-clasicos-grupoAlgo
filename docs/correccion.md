@@ -490,3 +490,58 @@ El procedimiento consiste en filtrar las letras del mensaje, contar sus aparicio
 La función romperCesar utiliza posteriormente el desplazamiento contrario para intentar recuperar el mensaje original.
 
 Las pruebas muestran que el método funciona cuando la distribución de frecuencias permite identificar correctamente el desplazamiento, pero también puede fallar en determinados mensajes. Por tanto, romperCesar constituye un método de estimación del desplazamiento mediante frecuencia, cuya efectividad depende de la distribución de las letras del mensaje.
+## 6. Corrección de `frecuencias` (punto 3)
+
+### 6.1. Notación y especificación
+
+- $N(l, m)$ es el número de veces que la letra $l \in \Sigma$ aparece en $m$.
+- $A: \Sigma \to \mathbb{N}$ es un acumulador; una letra ausente vale $0$.
+- $\mathrm{Sort}$ ordena pares $(l, n)$ de forma que $(l_1, n_1)$ va antes que $(l_2, n_2)$ si $n_1 > n_2$, o si $n_1 = n_2$ y $l_1 < l_2$.
+
+La especificación es:
+
+$$
+F(m) = \mathrm{Sort}\big(\{(l, N(l, m)) \mid l \in \Sigma,\ N(l, m) > 0\}\big)
+$$
+
+### 6.2. Invariante de `contar`
+
+**Lema 5.** Para todo $resto \in \mathcal{C}^*$ y todo acumulador $A$, `contar(resto, A)` devuelve $A'$ tal que, para toda $l \in \Sigma$:
+
+$$
+A'(l) = A(l) + N(l, resto)
+$$
+
+*Demostración.* Por inducción sobre $n = |resto|$, con $A$ arbitrario.
+
+- **Caso base ($n = 0$).** Devuelve $A$, y $N(l, \varepsilon) = 0$, así que $A'(l) = A(l)$. ✓
+- **Hipótesis inductiva.** Vale para toda cadena de longitud $n$ y **cualquier** acumulador.
+- **Paso inductivo.** Sea $resto = c \cdot r'$ con $|r'| = n$.
+  - Si $c \in \Sigma$, se llama con $A_1 = A[c \mapsto A(c) + 1]$. Por hipótesis inductiva, $A'(l) = A_1(l) + N(l, r')$. Para $l = c$ da $A(c) + 1 + N(c, r') = A(c) + N(c, c \cdot r')$; para $l \neq c$ da $A(l) + N(l, r') = A(l) + N(l, c \cdot r')$.
+  - Si $c \notin \Sigma$, se llama con $A_1 = A$ y $N(l, c \cdot r') = N(l, r')$ para toda $l \in \Sigma$, así que el resultado es el mismo. $\blacksquare$
+
+La hipótesis debe valer para **cualquier** acumulador, porque cambia en cada llamada.
+
+### 6.3. Corrección de `frecuencias`
+
+**Teorema 3.** Para todo $m \in \mathcal{C}^*$, `frecuencias(m)` $= F(m)$.
+
+*Demostración.* Con $A_0 = \emptyset$ (todo vale $0$), el Lema 5 da $A'(l) = N(l, m)$. El `Map` solo contiene las letras que se incrementaron al menos una vez, es decir, las que cumplen $N(l, m) > 0$. Luego `toList` produce exactamente el conjunto de pares de $F(m)$. Como las letras son distintas, el criterio $(-n, l)$ es un orden total sin empates, así que `sortBy` produce una única lista, la de $\mathrm{Sort}$. $\blacksquare$
+
+**Terminación.** En cada llamada $|resto|$ disminuye en 1 y se alcanza $|resto| = 0$; hay $|m| + 1$ llamadas.
+
+**Posición de cola.** En cada rama recursiva la llamada es la expresión completa devuelta; `updated` se evalúa antes, al calcular el argumento. Por eso `@tailrec` es válido.
+
+### 6.4. Cómo se encadenan los llamados
+
+Con $m = \texttt{"casa"}$, el invariante $A(l) + N(l, resto)$ se conserva en cada llamada:
+
+| Llamada | $resto$ | $A$ | $A(\texttt{a}) + N(\texttt{a}, resto)$ |
+|---|---|---|---|
+| `contar("casa", {})` | `casa` | `{}` | $0 + 2 = 2$ |
+| `contar("asa", {c→1})` | `asa` | `{c→1}` | $0 + 2 = 2$ |
+| `contar("sa", {c→1, a→1})` | `sa` | `{c→1, a→1}` | $1 + 1 = 2$ |
+| `contar("a", {c→1, a→1, s→1})` | `a` | `{c→1, a→1, s→1}` | $1 + 1 = 2$ |
+| `contar("", {c→1, a→2, s→1})` | `""` | `{c→1, a→2, s→1}` | $2 + 0 = 2$ |
+
+En la última fila se llega al caso base y se devuelve $A$. El valor de cada letra se completa a medida que `resto` se consume, y `sortBy` lo deja en el orden pedido: `List(('a',2), ('c',1), ('s',1))`.
