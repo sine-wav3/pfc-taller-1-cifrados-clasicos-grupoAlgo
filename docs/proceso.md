@@ -170,3 +170,57 @@ Como la llamada recursiva está en posición de cola, el compilador, gracias a `
 | Cantidad de llamadas | $n + 1$ | $n + 1$ |
 
 Ambas hacen exactamente la misma cantidad de llamadas; lo que cambia es **cuántas están vivas a la vez** en la pila.
+
+## 5. Punto 3: `frecuencias` (recursión de cola)
+
+```scala
+def frecuencias(m: Mensaje): Frecuencias = {
+  @tailrec
+  def contar(resto: Mensaje, acc: Map[Char, Int]): Map[Char, Int] =
+    if (resto.isEmpty) acc
+    else if (esMinuscula(resto.head))
+      contar(resto.tail, acc.updated(resto.head, acc.getOrElse(resto.head, 0) + 1))
+    else contar(resto.tail, acc)
+
+  contar(m, Map.empty[Char, Int]).toList.sortBy(p => (-p._2, p._1))
+}
+```
+
+- **Caso base:** si `resto` es vacío, el resultado es el acumulador `acc`.
+- **Caso recursivo:** si la primera letra es minúscula, se suma 1 a su cuenta en `acc`; si no, `acc` queda igual. En ambos casos se llama con `resto.tail`.
+- **Ordenamiento final:** se hace una sola vez, después del recorrido, con `sortBy`.
+
+### 5.1. Traza de la evaluación para `frecuencias("casa")`
+
+```
+contar("casa", {})
+→ contar("asa", {c→1})
+→ contar("sa",  {c→1, a→1})
+→ contar("a",   {c→1, a→1, s→1})
+→ contar("",    {c→1, a→2, s→1})
+= {c→1, a→2, s→1}
+→ toList.sortBy(...) = List(('a',2), ('c',1), ('s',1))
+```
+
+### 5.2. Estado de la pila paso a paso
+
+| Paso | `resto` | `acc` | Pila de llamados |
+|---|---|---|---|
+| 1 | `"casa"` | `{}` | 1 marco |
+| 2 | `"asa"` | `{c→1}` | 1 marco (reutilizado) |
+| 3 | `"sa"` | `{c→1, a→1}` | 1 marco (reutilizado) |
+| 4 | `"a"` | `{c→1, a→1, s→1}` | 1 marco (reutilizado) |
+| 5 | `""` | `{c→1, a→2, s→1}` | 1 marco: caso base, devuelve `acc` |
+
+```mermaid
+flowchart LR
+    S1["resto = 'casa'<br/>acc = {}"] --> S2["resto = 'asa'<br/>acc = {c→1}"]
+    S2 --> S3["resto = 'sa'<br/>acc = {c→1, a→1}"]
+    S3 --> S4["resto = 'a'<br/>acc = {c→1, a→1, s→1}"]
+    S4 --> S5["resto = ''<br/>acc = {c→1, a→2, s→1}"]
+    S5 --> O["sortBy: List(('a',2), ('c',1), ('s',1))"]
+```
+
+### 5.3. ¿Por qué la pila no crece?
+
+La llamada a `contar` es la última operación de cada rama: la actualización del `Map` se calcula antes, como argumento. No queda nada pendiente, así que el compilador, gracias a `@tailrec`, reutiliza el mismo marco y el espacio de pila es $O(1)$. El conteo parcial viaja en `acc`, no en la pila. El ordenamiento ocurre una sola vez al final y no genera llamados pendientes.

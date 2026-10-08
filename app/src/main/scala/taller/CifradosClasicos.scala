@@ -56,7 +56,17 @@ class CifradosClasicos {
    * Cuenta las letras minúsculas del mensaje, de mayor a menor frecuencia y,
    * en empate, en orden alfabético. El recorrido es recursivo de cola.
    */
-  def frecuencias(m: Mensaje): Frecuencias = ???
+
+  def frecuencias(m: Mensaje): Frecuencias = {
+    @tailrec
+    def contar(resto: Mensaje, acc: Map[Char, Int]): Map[Char, Int] =
+      if (resto.isEmpty) acc
+      else if (esMinuscula(resto.head))
+        contar(resto.tail, acc.updated(resto.head, acc.getOrElse(resto.head, 0) + 1))
+      else contar(resto.tail, acc)
+
+    contar(m, Map.empty[Char, Int]).toList.sortBy(p => (-p._2, p._1))
+  }
 
   // Punto 4: responsable Daniela Franco, Dayan Stefany, Juan Alejandro -------------------------------------------------------------------
 
