@@ -132,7 +132,7 @@ class CifradosClasicosTest extends AnyFunSuite {
       assert(romperCesar(cesar(original, 7)) != original)
     }
 
-    // Punto 5 -------------------------------------------------------------------
+    // Punto 5: Combinaciones -------------------------------------------------------------------
 
     test("combinaciones: con longitud 0 hay un mensaje, el vacío") {
       assert(combinaciones(0, 26) == BigInt(1))
@@ -154,6 +154,35 @@ class CifradosClasicosTest extends AnyFunSuite {
       assert(combinaciones(5, 4) == BigInt(3) * combinaciones(4, 4))
     }
 
+    // Punto 5: Combinaciones pruebas propias
+
+    test("combinaciones: dos letras de un alfabeto de 26") {
+      // 26 * 25
+      assert(combinaciones(2, 26) == BigInt(650))
+    }
+
+    test("combinaciones: longitud 4 con alfabeto de 3 letras") {
+      // 3 * 2 * 2 * 2
+      assert(combinaciones(4, 3) == BigInt(24))
+    }
+
+    test("combinaciones: con una sola letra solo cabe el mensaje de longitud 1") {
+      assert(combinaciones(1, 1) == BigInt(1))
+      assert(combinaciones(3, 1) == BigInt(0))
+    }
+
+    test("combinaciones: longitud 10 con alfabeto de 3 letras") {
+      // 3 * 2^9
+      assert(combinaciones(10, 3) == BigInt(1536))
+    }
+
+    test("combinaciones: resultados grandes no desbordan (BigInt)") {
+      // 26 * 25^29 no cabe en un Long
+      assert(combinaciones(30, 26) == BigInt(26) * BigInt(25).pow(29))
+    }
+
+
+    // Punto 5: vigenere
     test("vigenere: ataque con la clave sol") {
       assert(vigenere("ataque", "sol") == "shliip")
     }
@@ -173,5 +202,31 @@ class CifradosClasicosTest extends AnyFunSuite {
 
     test("vigenere: con una clave de una sola letra es un César") {
       assert(vigenere("hola mundo", "d") == cesar("hola mundo", 3))
+    }
+
+    // Punto 5: vigenere pruebas propias
+
+    test("vigenere: clave de una letra desplaza todo igual") {
+      assert(vigenere("abc", "b") == "bcd")
+    }
+
+    test("vigenere: el desplazamiento da la vuelta al final del alfabeto") {
+      // x+1=y, y+2=a, z+3=c
+      assert(vigenere("xyz", "bcd") == "yac")
+    }
+
+    test("vigenere: la clave se repite y el espacio no consume letra") {
+      // letras a,b,c,d usan b,c,b,c
+      assert(vigenere("ab cd", "bc") == "bd df")
+    }
+
+    test("vigenere: mayúsculas y dígitos pasan sin consumir letra de la clave") {
+      // solo la b se cifra, con la primera letra de la clave (c)
+      assert(vigenere("A1b", "c") == "A1d")
+    }
+
+    test("vigenere: con clave de una letra equivale a un césar") {
+      // 'd' es el desplazamiento 3
+      assert(vigenere("mensaje secreto", "d") == cesar("mensaje secreto", 3))
     }
 }
