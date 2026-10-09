@@ -102,6 +102,33 @@ class CifradosClasicosTest extends AnyFunSuite {
       assert(frecuencias("ba") == List(('a', 1), ('b', 1)))
     }
 
+    // Punto 3: Pruebas propias
+
+    test("frecuencias: perro") {
+      assert(frecuencias("perro") == List(('r', 2), ('e', 1), ('o', 1), ('p', 1)))
+    }
+
+    test("frecuencias: banana") {
+      assert(frecuencias("banana") == List(('a', 3), ('n', 2), ('b', 1)))
+    }
+
+    test("frecuencias: programacion") {
+      assert(frecuencias("programacion") ==
+        List(('a', 2), ('o', 2), ('r', 2), ('c', 1), ('g', 1),
+          ('i', 1), ('m', 1), ('n', 1), ('p', 1)))
+    }
+
+    test("frecuencias: mensaje con espacios") {
+      assert(frecuencias("hola mundo") ==
+        List(('o', 2), ('a', 1), ('d', 1), ('h', 1), ('l', 1), ('m', 1),
+          ('n', 1), ('u', 1)))
+    }
+
+    test("frecuencias: empate alfabetico") {
+      assert(frecuencias("dcba") ==
+        List(('a', 1), ('b', 1), ('c', 1), ('d', 1)))
+    }
+
     // Punto 4 -------------------------------------------------------------------
 
     test("desplazamientoProbable: h está 3 después de e") {
@@ -130,6 +157,30 @@ class CifradosClasicosTest extends AnyFunSuite {
       // En este mensaje la letra más frecuente es la 'a', no la 'e'.
       val original = "cada casa amarilla"
       assert(romperCesar(cesar(original, 7)) != original)
+    }
+
+    // Punto 4: Pruebas propias
+
+    test("desplazamientoProbable: la letra h tiene desplazamiento 3") {
+      assert(desplazamientoProbable("hhh") == 3)
+    }
+
+    test("desplazamientoProbable: la letra z tiene desplazamiento 21") {
+      assert(desplazamientoProbable("zzz") == 21)
+    }
+
+    test("desplazamientoProbable: mensaje sin letras") {
+      assert(desplazamientoProbable("456 !?") == 0)
+    }
+
+    test("romperCesar: recupera un mensaje cifrado con desplazamiento 5") {
+      val original = "este es un mensaje secreto"
+      assert(romperCesar(cesar(original, 5)) == original)
+    }
+
+    test("romperCesar: no recupera correctamente un mensaje si la frecuencia engaña") {
+      val original = "aaaa bbbb"
+      assert(romperCesar(cesar(original, 4)) != original)
     }
 
     // Punto 5: Combinaciones -------------------------------------------------------------------
